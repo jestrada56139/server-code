@@ -12,7 +12,11 @@ var salt = 10;
 var jwt = require('jsonwebtoken');
 var xss = require('xss');
 var user = { name: 'Jonathan Estrada' };
+const accountSid = 'ACaf0ec871b3c59a3447b45830a4c16d6e';
+const authToken = '20f9561685a7f3b67c16fa0fd5cc08fc';
+const client = require('twilio')(accountSid, authToken);
 
+ 
 
 
 mongoose.connect('mongodb://jonathanem:Evariste1@ds259768.mlab.com:59768/online-portfolio', function() {
@@ -44,7 +48,38 @@ var userSchema = new Schema({
         default : Date.now()
     }
 });
+
+var contactSchema = new Schema({
+    firstName: {
+        type: String,
+        required: true
+    },
+    lastName: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+    content: {
+        type: String,
+        required: true
+    },
+    created: {
+        type: Date,
+        default: Date.now()
+    },
+    modified: {
+        type: Date,
+        default: Date.now()
+    }
+});
+
+
 var User = mongoose.model('user', userSchema);
+var ContactForm = mongoose.model('contact', contactSchema);
+
 
 // middle ware
 app.use(bodyParser.urlencoded({extended: true}));
@@ -76,6 +111,30 @@ var bcryptService = {
     }
 
 };
+
+app.post('/contactFormSubmit', xssService.sanitize, function (req, res) {
+    var contactSchema = new ContactForm(req.body);
+    contactSchema.save(function (err, product) {
+        if (err) throw err;
+        console.log("Form Submitted!");
+        client.messages
+            .create({
+                to: '+13233926989',
+                from: '+18339883151',
+                body: 'pls work',
+            })
+            .then(message => {
+                console.log(message.sid)
+                res.status(200).send({
+                    type: true,
+                    data: 'Form Information Submitted to Database!'
+                })
+            })
+            .catch((err) => {
+                if (err) throw err;
+            })            
+    });
+});
 
 app.post('/admin/register', xssService.sanitize, bcryptService.hash, function (req, res) {
     var newUser = new User(req.body);
