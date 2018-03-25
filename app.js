@@ -28,7 +28,8 @@ mongoose.connect('mongodb://jonathanem:Evariste1@ds259768.mlab.com:59768/online-
         throw err
     } else {
         console.log('connected to mLab')
-        commentCollection = db.collection("comments")
+        commentCollection = db.collection("comments"),
+        blogCollection = db.collection("blogs")
     }
 
 });
@@ -59,6 +60,23 @@ var userSchema = new Schema({
     modified : {
         type: Date,
         default : Date.now()
+    }
+});
+
+// Creating a Blog
+
+var blogSchema = new Schema ({
+    author: {
+        type: String,
+        required: true
+    },
+    content: {
+        type: String,
+        required: true
+    },
+    created: {
+        type: Date,
+        default: Date.now()
     }
 });
 
@@ -107,6 +125,10 @@ var commentSchema = new Schema({
     modified: {
         type: Date,
         default: Date.now()
+    },
+    discussionId: {
+        type: String,
+        required: true
     }
 });
 
@@ -114,6 +136,7 @@ var commentSchema = new Schema({
 var User = mongoose.model('user', userSchema);
 var ContactForm = mongoose.model('contact', contactSchema);
 var CommentForm = mongoose.model('comment', commentSchema);
+var Blog = mongoose.model('blog', blogSchema);
 
 
 // middle ware
@@ -200,9 +223,22 @@ app.post('/comments', xssService.sanitize, function (req, res) {
     });
 });
 
+// adding a blog 
+app.post('/blogs', xssService.sanitize, function (req, res) {
+    var newBlog = new Blog(req.body);
+    newBlog.save(function (err, product) {
+        if (err) throw err;
+        console.log('added new blog!');
+        res.status(200).send({
+            type: true,
+            data: 'Succesfully Added New Blog'
+        });
+    });
+});
+
 // Getting comments
 app.get('/pullComments', function(req,res){
-    commentCollection.find().toArray(function(err,docs){
+    commentCollection.find({ discussionId : '5ab68e8f15cdcb74c13f47fc' }).toArray(function(err,docs){
       if (err){
         throw err;
         res.sendStatus(500);
@@ -213,7 +249,38 @@ app.get('/pullComments', function(req,res){
         res.status(200).send(result);
       }
     })
-  });
+});
+
+// Getting blogs
+// app.get('/pullBlogs', function(req ,res) {
+//     blogCollection.findOne().toArray(function(err, docs) {
+//         if (err) {
+//             throw err;
+//             res.sendStatus(500);
+//         } else {
+//             var result = docs.map(function(data){
+//                 return data;
+//             })
+//             res.status(200).send(result);
+//         }
+//     })
+// })
+
+// Getting Blogs
+app.get('/pullBlog', function (req, res) {
+    var id = req.headers.headerid
+    id = mongoose.Types.ObjectId(id);
+    Blog.findOne({
+        _id: id
+    }, function(err, data){
+        if(err) throw err;
+        console.log(data);
+        res.status(200).send(data);
+    });
+});
+
+
+  
 
 // Logging in that user
 app.post('/admin/login', function (req, res) {
