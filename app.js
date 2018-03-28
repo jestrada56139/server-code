@@ -112,11 +112,11 @@ var contactSchema = new Schema({
 var commentSchema = new Schema({
     name: {
         type: String,
-        required: true
+        //required: true
     },
     content: {
         type: String,
-        required: true
+       // required: true
     },
     created: {
         type: Date,
@@ -128,8 +128,8 @@ var commentSchema = new Schema({
     },
     discussionId: {
         type: String,
-        required: true
-    }
+    },
+    child: Boolean
 });
 
 // models
@@ -236,44 +236,45 @@ app.post('/blogs', xssService.sanitize, function (req, res) {
     });
 });
 
-// Getting comments
-app.get('/pullComments', function(req,res){
-    commentCollection.find({ discussionId : '5ab68e8f15cdcb74c13f47fc' }).toArray(function(err,docs){
-      if (err){
-        throw err;
-        res.sendStatus(500);
-      }else{
-        var result = docs.map(function(data){
-          return data;
-        })
-        res.status(200).send(result);
-      }
-    })
-});
 
-// Getting blogs
-// app.get('/pullBlogs', function(req ,res) {
-//     blogCollection.findOne().toArray(function(err, docs) {
-//         if (err) {
-//             throw err;
-//             res.sendStatus(500);
-//         } else {
-//             var result = docs.map(function(data){
-//                 return data;
-//             })
-//             res.status(200).send(result);
-//         }
+
+// Getting comments with a single blog
+// app.get('/pullComments', function(req,res){
+//     commentCollection.find({ discussionId : '5ab68e8f15cdcb74c13f47fc' }).toArray(function(err,docs){
+//       if (err){
+//         throw err;
+//         res.sendStatus(500);
+//       }else{
+//         var result = docs.map(function(data){
+//           return data;
+//         })
+//         res.status(200).send(result);
+//       }
 //     })
-// })
+// });
+
+// Getting Comments
+app.get('/pullComments', function(req, res){
+        commentCollection.find({ discussionid : req.body.discussionid }).toArray(function(err, docs){
+            if (err){
+                throw err;
+                res.sendStatus(500);
+            } else {
+                var result = docs.map(function(data){
+                    return data;
+                })
+                res.json(result);
+           }
+        })
+    });
+
 
 // Getting Blogs
 app.get('/pullBlog', function (req, res) {
     var id = req.headers.headerid
     id = mongoose.Types.ObjectId(id);
-    Blog.findOne({
-        _id: id
-    }, function(err, data){
-        if(err) throw err;
+    Blog.findOne({ _id: id }, function(err, data, next){
+         if(err) throw err;
         console.log(data);
         res.status(200).send(data);
     });
